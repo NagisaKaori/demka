@@ -1,0 +1,32 @@
+#!/bin/bash
+
+MAIN_DB="BD"
+USER_PREFIX="user"
+DB_PREFIX="BD"
+USER_COUNT=10
+MYSQL_ROOT_USER="Nagi"
+MYSQL_ROOT_PASSWORD="zxc"
+
+generate_password() {
+    tr -dc 'A-Za-z0-9' </dev/urandom | head -c 5
+}
+
+mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $MAIN_DB;"
+
+mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "USE $MAIN_DB; CREATE TABLE IF NOT EXISTS Users (username VARCHAR(50), password VARCHAR(50));"
+
+for i in $(seq 1 $USER_COUNT); do
+    USERNAME="${USER_PREFIX}${i}"
+    DBNAME="${DB_PREFIX}${i}"
+    PASSWORD=$(generate_password)
+
+    mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DBNAME;"
+
+    mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "CREATE USER '$USERNAME'@'localhost' IDENTIFIED BY '$PASSWORD';"
+
+    mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "GRANT ALL PRIVILEGES ON $DBNAME.* TO '$USERNAME'@'localhost';"
+
+    mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "USE $MAIN_DB; INSERT INTO Users (username, password) VALUES ('$USERNAME', '$PASSWORD');"
+done
+
+mysql -u $MYSQL_ROOT_USER -p$MYSQL_ROOT_PASSWORD -e "FLUSH PRIVILEGES;"
